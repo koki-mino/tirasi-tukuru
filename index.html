@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>イベントチラシ作成ツール</title>
+  <!-- Tailwind CSSをCDNで読み込み -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google FontsのInterを読み込み -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <!-- jsPDFライブラリをCDNで読み込み -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    input[type="text"], textarea {
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #d1d5db; /* gray-300 */
+      width: 100%;
+      font-size: 1rem;
+      transition: all 0.2s ease-in-out;
+    }
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: #4f46e5; /* indigo-600 */
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+    }
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .btn-primary {
+      background-image: linear-gradient(to right, #4f46e5, #ec4899); /* indigo-600 to pink-500 */
+      color: white;
+      padding: 0.75rem 2rem;
+      border-radius: 0.75rem; /* rounded-xl */
+      font-weight: 600; /* semibold */
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    }
+    .btn-primary:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .loading-spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #fff;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 p-4 sm:p-6 md:p-8 text-gray-800">
+  <div class="max-w-4xl mx-auto bg-white p-6 sm:p-8 md:p-10 rounded-2xl shadow-xl border border-gray-200">
+    <h1 class="text-3xl sm:text-4xl font-bold text-center mb-8 text-indigo-700">
+      イベントチラシ作成ツール
+    </h1>
+
+    <p class="text-center text-lg mb-8 text-gray-600">
+      以下の情報を入力して、イベントの参加者募集チラシをPDFで作成しましょう！
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <!-- イベント名 -->
+      <div>
+        <label for="eventName" class="block text-sm font-semibold text-gray-700 mb-2">
+          イベント名 <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="eventName" value="わくわく！夏の自然体験会" class="focus:ring-indigo-500 focus:border-indigo-500" placeholder="例：楽しい夏祭り！" />
+      </div>
+
+      <!-- 開催団体 -->
+      <div>
+        <label for="organizingBody" class="block text-sm font-semibold text-gray-700 mb-2">
+          開催団体 <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="organizingBody" value="〇〇子ども会 自然体験部" class="focus:ring-indigo-500 focus:border-indigo-500" placeholder="例：〇〇子ども会" />
+      </div>
+
+      <!-- 日時 -->
+      <div>
+        <label for="dateTime" class="block text-sm font-semibold text-gray-700 mb-2">
+          日時 <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="dateTime" value="2024年8月25日(日) 午前9時30分集合〜午後4時解散" class="focus:ring-indigo-500 focus:border-indigo-500" placeholder="例：2024年8月10日(土) 15:00〜19:00" />
+      </div>
+
+      <!-- 場所 -->
+      <div>
+        <label for="location" class="block text-sm font-semibold text-gray-700 mb-2">
+          場所 <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="location" value="〇〇自然公園 集合場所：管理棟前" class="focus:ring-indigo-500 focus:border-indigo-500" placeholder="例：〇〇公園 広場" />
+      </div>
+
+      <!-- 参加費 -->
+      <div>
+        <label for="participationFee" class="block text-sm font-semibold text-gray-700 mb-2">
+          参加費 <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="participationFee" value="子ども一人 500円（保険料込み）" class="focus:ring-indigo-500 focus:border-indigo-500" placeholder="例：無料" />
+      </div>
+
+      <!-- 持ち物 -->
+      <div>
+        <label for="whatToBring" class="block text-sm font-semibold text-gray-700 mb-2">
+          持ち物
+        </label>
+        <input type="text" id="whatToBring" value="お弁当、水筒、帽子、タオル、着替え、虫よけ、筆記用具" class="focus:ring-indigo-500 focus:border-indigo-500" placeholder="例：水筒、タオル、動きやすい服装" />
+      </div>
+
+      <!-- 申し込み方法 -->
+      <div>
+        <label for="howToApply" class="block text-sm font-semibold text-gray-700 mb-2">
+          申し込み方法 <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="howToApply" value="下記連絡先まで、参加者氏名、学年、保護者氏名、連絡先（電話番号、メールアドレス）をお知らせください。" class="focus:ring-indigo-500 focus:border-indigo-500" placeholder="例：下記連絡先までお電話またはメールでお申し込みください。" />
+      </div>
+
+      <!-- お問い合わせ先 -->
+      <div>
+        <label for="contactInfo" class="block text-sm font-semibold text-gray-700 mb-2">
+          お問い合わせ先 <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="contactInfo" value="担当：田中 (電話: 090-XXXX-XXXX / Email: tanaka@example.com)" class="focus:ring-indigo-500 focus:border-indigo-500" placeholder="例：担当：山田 (090-1234-5678) / Email: info@example.com" />
+      </div>
+    </div>
+
+    <!-- イベント概要 (textarea) -->
+    <div class="mb-8">
+      <label for="eventOverview" class="block text-sm font-semibold text-gray-700 mb-2">
+        イベント概要 <span class="text-red-500">*</span>
+      </label>
+      <textarea id="eventOverview" class="focus:ring-indigo-500 focus:border-indigo-500" placeholder="例：地域のみんなで楽しむ夏祭り！ゲーム、屋台、盆踊りなど盛りだくさん！">森の中で昆虫を探したり、川で水遊びをしたり、自然を満喫できるイベントです。専門のガイドが同行し、安全に配慮しながら学びと発見を提供します。お昼はみんなでピクニック！自然の中で楽しい一日を過ごしましょう！</textarea>
+    </div>
+    
+    <!-- 備考 -->
+    <div class="mb-8">
+      <label for="notes" class="block text-sm font-semibold text-gray-700 mb-2">
+        備考
+      </label>
+      <textarea id="notes" class="focus:ring-indigo-500 focus:border-indigo-500" placeholder="例：雨天決行、荒天中止。中止の場合は前日までに連絡します。">小雨決行、荒天中止。中止の場合は前日までに連絡します。</textarea>
+    </div>
+
+    <!-- チラシ生成ボタン -->
+    <div class="text-center">
+      <button onclick="generateFlyerPDF()" class="btn-primary flex items-center justify-center mx-auto">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        チラシを生成する (PDF)
+      </button>
+    </div>
+
+    <p class="text-center text-sm text-gray-500 mt-6">
+      <span class="text-red-500">*</span> は必須項目です。
+    </p>
+    <p class="text-center text-sm text-red-600 mt-2 font-bold">
+      ※重要: 日本語フォントを埋め込んでいないため、PDFでは日本語が正しく表示されない可能性があります。
+    </p>
+  </div>
+
+  <script>
+    function generateFlyerPDF() {
+      // jsPDFのインスタンスを作成 (A4サイズ, 単位はmm)
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20; // 余白
+      const contentWidth = pageWidth - 2 * margin;
+      const lineHeight = 8; // 行の高さ
+      let yPos = margin; // Y座標の初期位置
+
+      // --- 日本語フォントの設定 ---
+      // NOTE: jsPDFのデフォルトフォントは日本語に対応していません。
+      // このため、日本語は正しく表示されない可能性があります。
+      // 日本語フォントを正しく表示するには、フォントファイル (.ttf) をBase64エンコードし、
+      // 以下のコードブロックに埋め込む必要があります。
+      // 例: doc.addFileToVFS('NotoSansJP.ttf', 'YOUR_BASE64_ENCODED_FONT_DATA');
+      // doc.addFont('NotoSansJP.ttf', 'NotoSansJP', 'normal');
+      // doc.setFont('NotoSansJP');
+      doc.setFont('Helvetica', 'normal'); // デフォルトフォントを使用
+
+      // --- デザイン要素の追加 ---
+      const mainColor = [100, 149, 237]; // CornflowerBlue
+      const accentColor = [65, 105, 225]; // RoyalBlue
+      const headerHeight = 45;
+
+      // ヘッダー背景 (メインカラーの帯)
+      doc.setFillColor(...mainColor);
+      doc.rect(0, 0, pageWidth, headerHeight, 'F');
+
+      // ページの幅と余白
+      const eventName = document.getElementById('eventName').value;
+      const organizingBody = document.getElementById('organizingBody').value;
+      const eventOverview = document.getElementById('eventOverview').value;
+      const dateTime = document.getElementById('dateTime').value;
+      const location = document.getElementById('location').value;
+      const participationFee = document.getElementById('participationFee').value;
+      const whatToBring = document.getElementById('whatToBring').value;
+      const howToApply = document.getElementById('howToApply').value;
+      const contactInfo = document.getElementById('contactInfo').value;
+      const notes = document.getElementById('notes').value;
+
+      // イベント名 (ヘッダー背景の上に白文字で)
+      doc.setY(margin - 5);
+      doc.setX(margin);
+      doc.setFontSize(48);
+      doc.setFont('Helvetica', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.text(eventName, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 20;
+
+      // 開催団体 (ヘッダー背景の上に白文字で)
+      doc.setFontSize(18);
+      doc.setFont('Helvetica', 'normal');
+      doc.text(`主催: ${organizingBody}`, pageWidth / 2, yPos, { align: 'center' });
+      
+      // コンテンツ開始位置をヘッダーの下に設定
+      yPos = headerHeight + 10;
+      doc.setY(yPos);
+
+      // 区切り線 (メインコンテンツとの区切り)
+      doc.setDrawColor(...accentColor);
+      doc.setLineWidth(0.8);
+      doc.line(margin, yPos, pageWidth - margin, yPos);
+      yPos += 10;
+
+      // 各情報のセクション
+      function addSection(title, content) {
+        doc.setX(margin);
+        doc.setFontSize(20);
+        doc.setFont('Helvetica', 'bold');
+        doc.setTextColor(...accentColor);
+        doc.text(title, margin, yPos);
+        yPos += 10;
+        doc.setX(margin);
+        doc.setFontSize(14);
+        doc.setFont('Helvetica', 'normal');
+        doc.setTextColor(50, 50, 50);
+        const splitContent = doc.splitTextToSize(content, contentWidth);
+        doc.text(splitContent, margin, yPos);
+        yPos += (splitContent.length * 6) + 10;
+      }
+      
+      addSection("イベント概要", eventOverview);
+      addSection("日時", dateTime);
+      addSection("場所", location);
+      addSection("参加費", participationFee);
+      addSection("持ち物", whatToBring);
+      addSection("お申し込み方法", howToApply);
+      
+      // お問い合わせ先を強調するボックス
+      const currentYForBox = yPos;
+      doc.setX(margin);
+      doc.setLineWidth(0.5);
+      doc.setFillColor(240, 248, 255); // AliceBlue
+      doc.setDrawColor(...accentColor);
+      
+      const boxPadding = 5;
+      
+      doc.setFontSize(20);
+      doc.setFont('Helvetica', 'bold');
+      doc.setTextColor(...accentColor);
+      const titleHeight = 8;
+      const contactTitle = "お問い合わせ先";
+      doc.text(contactTitle, margin + boxPadding, currentYForBox + boxPadding + titleHeight / 2);
+      
+      doc.setX(margin + boxPadding);
+      doc.setFontSize(14);
+      doc.setFont('Helvetica', 'normal');
+      doc.setTextColor(50, 50, 50);
+      const splitContact = doc.splitTextToSize(contactInfo, contentWidth - boxPadding * 2);
+      const contactTextHeight = splitContact.length * 6;
+      doc.text(splitContact, margin + boxPadding, currentYForBox + boxPadding + titleHeight + 4);
+      
+      const boxHeight = titleHeight + contactTextHeight + boxPadding * 3;
+      doc.rect(margin, currentYForBox, contentWidth, boxHeight, 'FD');
+      yPos = currentYForBox + boxHeight + 10;
+      
+      if (notes) {
+        addSection("備考", notes);
+      }
+
+      // フッター
+      doc.setY(pageHeight - margin);
+      doc.setFontSize(12);
+      doc.setTextColor(150, 150, 150);
+      doc.setFont('Helvetica', 'normal');
+      doc.text("皆様のご参加を心よりお待ちしております！", pageWidth / 2, doc.get_y(), { align: 'center' });
+
+      // PDFを保存
+      doc.save('イベントチラシ.pdf');
+    }
+  </script>
+</body>
+</html>
