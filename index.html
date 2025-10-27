@@ -1,16 +1,15 @@
 <!doctype html>
+
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>足利まなびマップ（GPS版MVP）</title>
-  <!-- Tailwind (CDN) -->
+  <!-- Tailwind CSS (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Leaflet (Map) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <!-- Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Leaflet (CDNJS / SRI 1.9.4) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" integrity="sha512-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" integrity="sha512-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     html, body { height: 100%; }
     #map { height: 420px; }
@@ -26,111 +25,106 @@
         <button id="tab-help" class="tab-btn px-3 py-1.5 rounded-lg hover:bg-gray-200">遊び方</button>
       </nav>
     </div>
-  </header>
-
-  <main class="max-w-6xl mx-auto px-4 py-4">
-    <!-- MAP SECTION -->
-    <section id="sec-map" class="space-y-4">
-      <div class="grid md:grid-cols-3 gap-4">
-        <div class="md:col-span-2 bg-white rounded-2xl shadow p-3">
-          <div id="map" class="rounded-xl overflow-hidden"></div>
-        </div>
-        <aside class="bg-white rounded-2xl shadow p-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold">スポット一覧</h2>
-            <span class="text-sm text-gray-500">半径内で解錠可</span>
-          </div>
-          <div id="spot-list" class="space-y-2"></div>
-        </aside>
+  </header>  <main class="max-w-6xl mx-auto px-4 py-4">
+    <!-- ====== 診断パネル（公開用に見える形） ====== -->
+    <div id="diag" class="text-xs text-gray-600 bg-white border rounded-xl p-3 mb-3 whitespace-pre-wrap"></div><!-- MAP SECTION -->
+<section id="sec-map" class="space-y-4">
+  <div class="grid md:grid-cols-3 gap-4">
+    <div class="md:col-span-2 bg-white rounded-2xl shadow p-3">
+      <div id="map" class="rounded-xl overflow-hidden"></div>
+    </div>
+    <aside class="bg-white rounded-2xl shadow p-4 space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold">スポット一覧</h2>
+        <span class="text-sm text-gray-500">半径内で解錠可</span>
       </div>
+      <div id="spot-list" class="space-y-2"></div>
+    </aside>
+  </div>
 
-      <div id="spot-panel" class="hidden bg-white rounded-2xl shadow p-5">
-        <div class="flex items-start gap-4">
-          <div class="grow">
-            <h3 id="spot-title" class="text-xl font-bold"></h3>
-            <div class="mt-1 text-sm text-gray-600"><span id="spot-themes"></span> ｜ 推奨半径 <span id="spot-radius"></span> m</div>
-            <p id="spot-desc" class="mt-3 leading-relaxed"></p>
-            <p id="spot-caution" class="mt-2 text-sm text-amber-700 bg-amber-50 p-2 rounded">安全：<span></span></p>
-          </div>
-          <div class="shrink-0 text-center">
-            <div class="text-xs text-gray-500">解錠ステータス</div>
-            <div id="unlock-status" class="mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm">未解錠</div>
-          </div>
-        </div>
-
-        <div class="mt-4 grid md:grid-cols-3 gap-3">
-          <button id="btn-here" class="col-span-2 px-4 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700">ここにいる（位置情報で判定）</button>
-          <button id="btn-quiz" class="px-4 py-3 rounded-xl bg-gray-200 text-gray-700 font-medium" disabled>クイズを始める</button>
-        </div>
-
-        <details class="mt-3 text-sm text-gray-600">
-          <summary class="cursor-pointer">測位の詳細（精度/速度チェック）</summary>
-          <div id="loc-log" class="mt-2 whitespace-pre-wrap bg-gray-50 rounded p-2"></div>
-        </details>
+  <div id="spot-panel" class="hidden bg-white rounded-2xl shadow p-5">
+    <div class="flex items-start gap-4">
+      <div class="grow">
+        <h3 id="spot-title" class="text-xl font-bold"></h3>
+        <div class="mt-1 text-sm text-gray-600"><span id="spot-themes"></span> ｜ 推奨半径 <span id="spot-radius"></span> m</div>
+        <p id="spot-desc" class="mt-3 leading-relaxed"></p>
+        <p id="spot-caution" class="mt-2 text-sm text-amber-700 bg-amber-50 p-2 rounded">安全：<span></span></p>
       </div>
-
-      <div id="quiz-panel" class="hidden bg-white rounded-2xl shadow p-5">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xl font-bold">クイズ</h3>
-          <button id="btn-quit-quiz" class="text-sm text-gray-600 hover:underline">終了</button>
-        </div>
-        <div id="quiz-body" class="mt-3"></div>
+      <div class="shrink-0 text-center">
+        <div class="text-xs text-gray-500">解錠ステータス</div>
+        <div id="unlock-status" class="mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm">未解錠</div>
       </div>
-    </section>
+    </div>
 
-    <!-- STAMPS SECTION -->
-    <section id="sec-stamps" class="hidden space-y-4">
-      <div class="bg-white rounded-2xl shadow p-5">
-        <h2 class="text-lg font-semibold">スタンプ帳</h2>
-        <p class="text-sm text-gray-600 mt-1">取得数：<span id="stamp-count">0</span> ／ バッジ：<span id="badge-label">なし</span></p>
-        <div id="stamp-grid" class="mt-4 grid sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
-      </div>
-    </section>
+    <div class="mt-4 grid md:grid-cols-3 gap-3">
+      <button id="btn-here" class="col-span-2 px-4 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700">ここにいる（位置情報で判定）</button>
+      <button id="btn-quiz" class="px-4 py-3 rounded-xl bg-gray-200 text-gray-700 font-medium" disabled>クイズを始める</button>
+    </div>
 
-    <!-- HELP SECTION -->
-    <section id="sec-help" class="hidden space-y-4">
-      <div class="bg-white rounded-2xl shadow p-5">
-        <h2 class="text-lg font-semibold">遊び方とプライバシー</h2>
-        <ol class="list-decimal ml-5 mt-2 space-y-1 text-gray-700">
-          <li>マップからスポットを選ぶ</li>
-          <li>現地で「ここにいる」を押す → 位置情報の許可</li>
-          <li>端末が2〜5回の測位を行い、半径内かつ歩行速度であれば解錠</li>
-          <li>クイズ3問に挑戦 → 合格でスタンプが貯まる</li>
-        </ol>
-        <p class="mt-3 text-sm text-gray-600">※ 位置情報は<span class="font-semibold">解錠判定のみに使用し、サーバ保存しません。</span>（ローカル端末に取得履歴のみ保存）</p>
-      </div>
-    </section>
-  </main>
+    <details class="mt-3 text-sm text-gray-600">
+      <summary class="cursor-pointer">測位の詳細（精度/速度チェックのログ）</summary>
+      <div id="loc-log" class="mt-2 whitespace-pre-wrap bg-gray-50 rounded p-2"></div>
+    </details>
+  </div>
 
-  <footer class="max-w-6xl mx-auto px-4 pb-10 text-xs text-gray-500">
+  <div id="quiz-panel" class="hidden bg-white rounded-2xl shadow p-5">
+    <div class="flex items-center justify-between">
+      <h3 class="text-xl font-bold">クイズ</h3>
+      <button id="btn-quit-quiz" class="text-sm text-gray-600 hover:underline">終了</button>
+    </div>
+    <div id="quiz-body" class="mt-3"></div>
+  </div>
+</section>
+
+<!-- STAMPS SECTION -->
+<section id="sec-stamps" class="hidden space-y-4">
+  <div class="bg-white rounded-2xl shadow p-5">
+    <h2 class="text-lg font-semibold">スタンプ帳</h2>
+    <p class="text-sm text-gray-600 mt-1">取得数：<span id="stamp-count">0</span> ／ バッジ：<span id="badge-label">なし</span></p>
+    <div id="stamp-grid" class="mt-4 grid sm:grid-cols-2 md:grid-cols-3 gap-3"></div>
+  </div>
+</section>
+
+<!-- HELP SECTION -->
+<section id="sec-help" class="hidden space-y-4">
+  <div class="bg-white rounded-2xl shadow p-5">
+    <h2 class="text-lg font-semibold">遊び方とプライバシー</h2>
+    <ol class="list-decimal ml-5 mt-2 space-y-1 text-gray-700">
+      <li>マップからスポットを選ぶ</li>
+      <li>現地で「ここにいる」を押す → 位置情報の許可</li>
+      <li>端末が2〜5回の測位を行い、半径内かつ歩行速度であれば解錠</li>
+      <li>クイズ3問に挑戦 → 合格でスタンプが貯まる</li>
+    </ol>
+    <p class="mt-3 text-sm text-gray-600">※ 位置情報は<span class="font-semibold">解錠判定のみに使用し、サーバ保存しません。</span>（ローカル端末に取得履歴のみ保存）</p>
+  </div>
+</section>
+
+  </main>  <footer class="max-w-6xl mx-auto px-4 pb-10 text-xs text-gray-500">
     <p>© Ashikaga Learning Map MVP. データは仮の教育用です。座標・半径は現地確認で最終調整してください。</p>
-  </footer>
-
-  <script>
-  // ====== 追加: 環境・権限チェック ======
-  async function ensureGeoReady() {
-    if (!('geolocation' in navigator)) {
-      throw new Error('この端末/ブラウザは位置情報に対応していません');
-    }
-    // secure context（HTTPS or localhost）チェック
-    const isLocalhost = ['localhost','127.0.0.1','::1'].includes(location.hostname);
-    if (!window.isSecureContext && !isLocalhost) {
-      throw new Error('HTTPS（またはlocalhost）で開いてください');
-    }
-    // permission状態の事前確認
+  </footer>  <script>
+  // ====== 診断パネル（環境チェック） ======
+  (async () => {
+    const Ls = [];
+    Ls.push(`URL: ${location.href}`);
+    Ls.push(`isSecureContext: ${window.isSecureContext}`);
+    Ls.push(`geolocation in navigator: ${'geolocation' in navigator}`);
     try {
-      if (navigator.permissions && navigator.permissions.query) {
+      if (navigator.permissions?.query) {
         const st = await navigator.permissions.query({ name: 'geolocation' });
-        if (st.state === 'denied') {
-          throw new Error('ブラウザで位置情報がブロックされています（サイト設定で許可）');
-        }
+        Ls.push(`permissions.query('geolocation'): ${st.state}`);
+      } else {
+        Ls.push(`permissions.query: (unsupported)`);
       }
-    } catch (_) { /* 一部ブラウザは未対応 */ }
-  }
+    } catch(e) { Ls.push('permissions.query error: '+e.message); }
+    const hasLeaflet = !!window.L;
+    Ls.push(`Leaflet loaded: ${hasLeaflet}`);
+    document.getElementById('diag').textContent = Ls.join('\n');
+  })();
+
   // ====== ユーティリティ ======
   const rad = (d) => d * Math.PI / 180;
   const haversine = (lat1, lon1, lat2, lon2) => {
-    const R = 6371000; // meters
+    const R = 6371000; // m
     const dLat = rad(lat2 - lat1);
     const dLon = rad(lon2 - lon1);
     const a = Math.sin(dLat/2)**2 + Math.cos(rad(lat1)) * Math.cos(rad(lat2)) * Math.sin(dLon/2)**2;
@@ -139,87 +133,72 @@
   };
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-  // ====== データ（仮） ======
-  /**
-   * 注意：座標は公開情報を元にした参考値。現地で確認して微調整してください。
-   * radius_m は測位環境に応じて 30/50/60/70/80 から選定。
-   */
+  // ====== 環境・権限チェック ======
+  async function ensureGeoReady() {
+    if (!('geolocation' in navigator)) {
+      throw new Error('この端末/ブラウザは位置情報に対応していません');
+    }
+    const isLocalhost = ['localhost','127.0.0.1','::1'].includes(location.hostname);
+    if (!window.isSecureContext && !isLocalhost) {
+      throw new Error('HTTPS（またはlocalhost）で開いてください');
+    }
+    try {
+      if (navigator.permissions && navigator.permissions.query) {
+        const st = await navigator.permissions.query({ name: 'geolocation' });
+        if (st.state === 'denied') {
+          throw new Error('ブラウザで位置情報がブロックされています（サイト設定で許可）');
+        }
+      }
+    } catch (_) { /* ブラウザ差吸収 */ }
+  }
+
+  // ====== データ（仮スポット） ======
   const SPOTS = [
-    {
-      id: 'ashikaga-gakko',
-      name: '足利学校',
-      lat: 36.338056, // 36°20'17"N
-      lng: 139.451667, // 139°27'6"E
-      themes: ['歴史'], radius_m: 50,
-      short: '日本最古級の学校として知られる足利の象徴。',
-      long: '展示や庭園を見ながら、昔の学びと今の学びをつなげて考えよう。静かな環境を守り、段差や通行に注意。',
-      caution: '混雑時は譲り合い・大声を控える',
-      quiz: [
-        { q: '足利学校が特に有名なのは？', choices: ['日本で最も新しい学校', '日本最古級の学校として伝わる', '海の研究が中心', '体育施設が多い'], ans: 1, exp: '歴史的に「日本最古級の学校」として知られます。' },
-        { q: '代表的な学びは？', choices: ['儒学', 'ダンス', '漁業', '彫刻'], ans: 0, exp: '古くから儒学が学ばれました。' },
-        { q: '見学時に大切なのは？', choices: ['走り回る', '大声を出す', '文化財を傷つけない', '私物展示に触れる'], ans: 2, exp: '文化財保護のため静かに見学します。' },
-      ],
-    },
-    {
-      id: 'bannaji',
-      name: '鑁阿寺',
-      lat: 36.337500, // 36°20'15"N
-      lng: 139.452222, // 139°27'8"E
-      themes: ['歴史','建築'], radius_m: 60,
-      short: '静かな境内と建築が魅力の寺院。',
-      long: '文化財を守るため通路を歩き、案内表示に従って拝観。段差や人の流れに注意。',
-      caution: '通行の妨げ・立入禁止越え禁止',
-      quiz: [
-        { q: '境内での適切なマナーは？', choices: ['石垣に登る', '指定外に立ち入る', '通路を歩き静かに拝観する', '鳥居前で走る'], ans: 2, exp: '通路を歩き、静かに拝観します。' },
-        { q: '建物を見る視点は？', choices: ['材料や屋根の形、配置', '参拝者の持ち物', '車の色', 'ペットの種類'], ans: 0, exp: '建築の特徴に注目しましょう。' },
-        { q: '安全配慮で正しいのは？', choices: ['階段を駆け下りる', '混雑時は譲り合う', '柱にぶら下がる', '通行止めを越える'], ans: 1, exp: '混雑時は譲り合いが大切です。' },
-      ],
-    },
-    {
-      id: 'orihime',
-      name: '織姫神社',
-      lat: 36.339254, // 2markers 参照
-      lng: 139.444869,
-      themes: ['自然','歴史'], radius_m: 70,
-      short: '市内を見渡す高台。長い階段に注意。',
-      long: '景観と歴史を学びつつ、階段では手すりを使い無理のないペースで。天候・路面に注意。',
-      caution: '階段での転倒・撮影マナー',
-      quiz: [
-        { q: '階段で安全な行動は？', choices: ['手すりを使い足元に注意', '駆け上がる', '横一列で広がる', 'スマホを見ながら歩く'], ans: 0, exp: '手すりを活用し足元に注意。' },
-        { q: '学びにつながる観察は？', choices: ['風向きや雲の動き', '車種の数え上げ', '飲食店の値段', '石段の傷の数'], ans: 0, exp: '自然環境の観察が学びに。' },
-        { q: '見学時の配慮は？', choices: ['参道で飲食', '大声で通話', '写真撮影のマナーを守る', '鳥居の上に座る'], ans: 2, exp: '撮影マナーを守ります。' },
-      ],
-    },
-    {
-      id: 'taiheikikan',
-      name: '太平記館',
-      lat: 36.337800, // 参考：足利学校近傍（要現地確認）
-      lng: 139.452900,
-      themes: ['歴史'], radius_m: 50,
-      short: '足利の観光情報・休憩拠点。',
-      long: '足利氏や地域史の学びの入口として情報が集まる施設。展示は触らず、案内に従って見学しよう。',
-      caution: '展示への接触禁止・順路遵守',
-      quiz: [
-        { q: '館内の基本マナーは？', choices: ['展示物に触れる', '大声で会話', '順路と案内に従う', 'フラッシュ必須'], ans: 2, exp: '順路と案内に従います。' },
-        { q: '良い学びの姿勢は？', choices: ['メモで要点をまとめる', '説明を読まず写真だけ', '走り回る', '無関係な物を持ち込む'], ans: 0, exp: 'メモで理解が深まります。' },
-        { q: '展示の読み取りで大切な情報は？', choices: ['タイトル・年代・地名', '展示ケースの傷', '来館者の服装', '窓の枚数'], ans: 0, exp: '基本情報を押さえます。' },
-      ],
-    },
-    {
-      id: 'watarase',
-      name: '渡良瀬川 河川敷',
-      lat: 36.334083, // 参考：渡良瀬橋付近
-      lng: 139.444389,
-      themes: ['自然','安全'], radius_m: 80,
-      short: '自然観察や運動ができる広い河川敷。',
-      long: '天候や増水に注意し、水際には近づきすぎない。ゴミは持ち帰ろう。',
-      caution: '増水・落雷・強風時は近づかない',
-      quiz: [
-        { q: '増水時の正しい行動は？', choices: ['近づいて撮影', '流木を拾う', '離れて安全確保', '石を投げる'], ans: 2, exp: '増水時は近づかないのが基本。' },
-        { q: '環境を守る行動は？', choices: ['ゴミは持ち帰る', '草花を大量採取', '焚き火をする', '野鳥を追い回す'], ans: 0, exp: '持ち帰りが基本です。' },
-        { q: '暑い日の安全対策は？', choices: ['水分補給を控える', '帽子や日陰を活用', '直射日光に長時間当たる', '無理して走り続ける'], ans: 1, exp: '熱中症対策を行いましょう。' },
-      ],
-    },
+    { id:'ashikaga-gakko', name:'足利学校', lat:36.338056, lng:139.451667, themes:['歴史'], radius_m:50,
+      short:'日本最古級の学校として知られる足利の象徴。',
+      long:'展示や庭園を見ながら、昔の学びと今の学びをつなげて考えよう。静かな環境を守り、段差や通行に注意。',
+      caution:'混雑時は譲り合い・大声を控える',
+      quiz:[
+        { q:'足利学校が特に有名なのは？', choices:['日本で最も新しい学校','日本最古級の学校として伝わる','海の研究が中心','体育施設が多い'], ans:1, exp:'歴史的に「日本最古級の学校」として知られます。' },
+        { q:'代表的な学びは？', choices:['儒学','ダンス','漁業','彫刻'], ans:0, exp:'古くから儒学が学ばれました。' },
+        { q:'見学時に大切なのは？', choices:['走り回る','大声を出す','文化財を傷つけない','私物展示に触れる'], ans:2, exp:'文化財保護のため静かに見学します。' }
+      ] },
+    { id:'bannaji', name:'鑁阿寺', lat:36.337500, lng:139.452222, themes:['歴史','建築'], radius_m:60,
+      short:'静かな境内と建築が魅力の寺院。',
+      long:'文化財を守るため通路を歩き、案内表示に従って拝観。段差や人の流れに注意。',
+      caution:'通行の妨げ・立入禁止越え禁止',
+      quiz:[
+        { q:'境内での適切なマナーは？', choices:['石垣に登る','指定外に立ち入る','通路を歩き静かに拝観する','鳥居前で走る'], ans:2, exp:'通路を歩き、静かに拝観します。' },
+        { q:'建物を見る視点は？', choices:['材料や屋根の形、配置','参拝者の持ち物','車の色','ペットの種類'], ans:0, exp:'建築の特徴に注目しましょう。' },
+        { q:'安全配慮で正しいのは？', choices:['階段を駆け下りる','混雑時は譲り合う','柱にぶら下がる','通行止めを越える'], ans:1, exp:'混雑時は譲り合いが大切です。' }
+      ] },
+    { id:'orihime', name:'織姫神社', lat:36.339254, lng:139.444869, themes:['自然','歴史'], radius_m:70,
+      short:'市内を見渡す高台。長い階段に注意。',
+      long:'景観と歴史を学びつつ、階段では手すりを使い無理のないペースで。天候・路面に注意。',
+      caution:'階段での転倒・撮影マナー',
+      quiz:[
+        { q:'階段で安全な行動は？', choices:['手すりを使い足元に注意','駆け上がる','横一列で広がる','スマホを見ながら歩く'], ans:0, exp:'手すりを活用し足元に注意。' },
+        { q:'学びにつながる観察は？', choices:['風向きや雲の動き','車種の数え上げ','飲食店の値段','石段の傷の数'], ans:0, exp:'自然環境の観察が学びに。' },
+        { q:'見学時の配慮は？', choices:['参道で飲食','大声で通話','写真撮影のマナーを守る','鳥居の上に座る'], ans:2, exp:'撮影マナーを守ります。' }
+      ] },
+    { id:'taiheikikan', name:'太平記館', lat:36.337800, lng:139.452900, themes:['歴史'], radius_m:50,
+      short:'足利の観光情報・休憩拠点。',
+      long:'足利氏や地域史の学びの入口として情報が集まる施設。展示は触らず、案内に従って見学しよう。',
+      caution:'展示への接触禁止・順路遵守',
+      quiz:[
+        { q:'館内の基本マナーは？', choices:['展示物に触れる','大声で会話','順路と案内に従う','フラッシュ必須'], ans:2, exp:'順路と案内に従います。' },
+        { q:'良い学びの姿勢は？', choices:['メモで要点をまとめる','説明を読まず写真だけ','走り回る','無関係な物を持ち込む'], ans:0, exp:'メモで理解が深まります。' },
+        { q:'展示の読み取りで大切な情報は？', choices:['タイトル・年代・地名','展示ケースの傷','来館者の服装','窓の枚数'], ans:0, exp:'基本情報を押さえます。' }
+      ] },
+    { id:'watarase', name:'渡良瀬川 河川敷', lat:36.334083, lng:139.444389, themes:['自然','安全'], radius_m:80,
+      short:'自然観察や運動ができる広い河川敷。',
+      long:'天候や増水に注意し、水際には近づきすぎない。ゴミは持ち帰ろう。',
+      caution:'増水・落雷・強風時は近づかない',
+      quiz:[
+        { q:'増水時の正しい行動は？', choices:['近づいて撮影','流木を拾う','離れて安全確保','石を投げる'], ans:2, exp:'増水時は近づかないのが基本。' },
+        { q:'環境を守る行動は？', choices:['ゴミは持ち帰る','草花を大量採取','焚き火をする','野鳥を追い回す'], ans:0, exp:'持ち帰りが基本です。' },
+        { q:'暑い日の安全対策は？', choices:['水分補給を控える','帽子や日陰を活用','直射日光に長時間当たる','無理して走り続ける'], ans:1, exp:'熱中症対策を行いましょう。' }
+      ] }
   ];
 
   // ====== 状態 ======
@@ -227,23 +206,16 @@
   let map, markers = {};
 
   // ====== 永続化（localStorage） ======
-  const LS_KEY = 'ashikaga_manabi_mvp_v1';
-  const loadState = () => {
-    try { return JSON.parse(localStorage.getItem(LS_KEY)) || { stamps: {} }; } catch { return { stamps: {} }; }
-  };
+  const LS_KEY = 'ashikaga_manabi_mvp_v2';
+  const loadState = () => { try { return JSON.parse(localStorage.getItem(LS_KEY)) || { stamps:{} }; } catch { return { stamps:{} }; } };
   const saveState = (st) => localStorage.setItem(LS_KEY, JSON.stringify(st));
   let appState = loadState();
 
-  // ====== 地図初期化 ======
+  // ====== 地図初期化（失敗しても続行） ======
   function initMap() {
     const center = [36.34015, 139.44970]; // 足利中心付近
     map = L.map('map').setView(center, 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    // マーカー
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     SPOTS.forEach(s => {
       const m = L.marker([s.lat, s.lng]).addTo(map).bindPopup(`<b>${s.name}</b><br/>半径${s.radius_m}m`);
       m.on('click', () => selectSpot(s.id));
@@ -257,9 +229,7 @@
     const secIds = ['sec-map','sec-stamps','sec-help'];
     const tabs = ['tab-map','tab-stamps','tab-help'];
     secIds.forEach((id,i)=>{
-      const el = $('#'+id);
-      const btn = $('#'+tabs[i]);
-      const on = (i === key);
+      const el = $('#'+id); const btn = $('#'+tabs[i]); const on = (i===key);
       el.classList.toggle('hidden', !on);
       btn.classList.toggle('bg-gray-900', on);
       btn.classList.toggle('text-white', on);
@@ -270,14 +240,13 @@
 
   // ====== スポット一覧 ======
   function renderSpotList() {
-    const list = $('#spot-list');
-    list.innerHTML = '';
+    const list = $('#spot-list'); list.innerHTML = '';
     SPOTS.forEach(s => {
       const unlocked = !!appState.stamps[s.id];
       const row = document.createElement('button');
       row.className = 'w-full text-left px-3 py-2 rounded-xl border hover:bg-gray-50 flex items-center justify-between';
       row.innerHTML = `<div><div class="font-medium">${s.name}</div><div class="text-xs text-gray-500">${s.themes.join('・')}｜半径${s.radius_m}m</div></div><div class="text-xs px-2 py-1 rounded ${unlocked? 'bg-emerald-100 text-emerald-700':'bg-gray-100 text-gray-600'}">${unlocked? '解錠済' : '未解錠'}</div>`;
-      row.addEventListener('click', ()=>{ selectSpot(s.id); map.setView([s.lat,s.lng], 17); });
+      row.addEventListener('click', ()=>{ selectSpot(s.id); if (map) map.setView([s.lat,s.lng], 17); });
       list.appendChild(row);
     });
   }
@@ -303,16 +272,13 @@
     el.className = 'mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ' + (label==='解錠済' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-700');
   }
 
-  // ====== 測位（複数サンプル） ======
+  // ====== 測位（レース + 複数サンプル） ======
   async function samplePositions(n=3, interval=1200) {
-    // getCurrentPosition と watchPosition のレースで“最初に取れた良い値”を採用し、これを複数回繰り返す
     const once = (timeout=10000) => new Promise((resolve, reject) => {
       let done = false; let watchId = null; const timer = setTimeout(() => { if (!done) { done = true; if (watchId!==null) navigator.geolocation.clearWatch(watchId); reject(new Error('timeout')); } }, timeout+2000);
       const opts = { enableHighAccuracy: true, maximumAge: 10000, timeout };
       const finish = (p) => { if (!done) { done = true; clearTimeout(timer); if (watchId!==null) navigator.geolocation.clearWatch(watchId); resolve(p); } };
-      // watch でウォームアップ
       watchId = navigator.geolocation.watchPosition(finish, ()=>{}, opts);
-      // getCurrent も同時に実行
       navigator.geolocation.getCurrentPosition(finish, ()=>{}, opts);
     });
     const samples = []; const log = [];
@@ -327,44 +293,20 @@
       }
       if (i < n-1) await sleep(interval);
     }
-    return { samples, log: log.join('
-') };
-  };
-    const samples = [];
-    const log = [];
-    for (let i=0;i<n;i++) {
-      const p = await new Promise((resolve, reject)=>{
-        navigator.geolocation.getCurrentPosition(resolve, reject, opts);
-      }).catch(err=>({ error: err }));
-      if (p && !p.error) {
-        const { latitude:lat, longitude:lng, accuracy } = p.coords;
-        const t = p.timestamp;
-        samples.push({ lat, lng, accuracy, t });
-        log.push(`#${i+1}: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)}, acc~${Math.round(accuracy)}m`);
-      } else {
-        log.push(`#${i+1}: 測位エラー (${p.error && p.error.message})`);
-      }
-      if (i < n-1) await sleep(interval);
-    }
     return { samples, log: log.join('\n') };
   }
 
   function avgPosition(samples) {
     if (!samples.length) return null;
-    // 精度（accuracy）50m以内を優先、なければ全体平均
     const good = samples.filter(s=>s.accuracy<=50);
     const base = (good.length? good : samples);
     const lat = base.reduce((a,b)=>a+b.lat,0)/base.length;
     const lng = base.reduce((a,b)=>a+b.lng,0)/base.length;
-    // 速度（最後の2サンプル）
     let avgSpeed = null;
     if (samples.length>=2) {
       const a = samples[samples.length-2], b = samples[samples.length-1];
-      const d = haversine(a.lat,a.lng,b.lat,b.lng); // m
-      const dt = Math.max(1, (b.t - a.t)/1000); // s
-      avgSpeed = d/dt; // m/s
+      const d = haversine(a.lat,a.lng,b.lat,b.lng); const dt = Math.max(1,(b.t-a.t)/1000); avgSpeed = d/dt;
     }
-    // 平均精度推定
     const acc = Math.round(samples.reduce((a,b)=>a+b.accuracy,0)/samples.length);
     return { lat, lng, accuracy: acc, avgSpeed };
   }
@@ -375,14 +317,10 @@
     const logEl = $('#loc-log');
     logEl.textContent = '環境チェック中…';
 
-    try {
-      await ensureGeoReady();
-    } catch (e) {
-      alert(e.message + '
-
-対処: (1) HTTPSで開く / (2) ブラウザのサイト設定で位置情報を許可 / (3) 端末の位置情報をON');
-      logEl.textContent = 'NG: ' + e.message;
-      return;
+    try { await ensureGeoReady(); }
+    catch (e) {
+      alert(e.message + '\n\n対処: (1) HTTPSで開く / (2) サイト設定で位置情報を許可 / (3) 端末の位置情報をON');
+      logEl.textContent = 'NG: ' + e.message; return;
     }
 
     logEl.textContent = '測位中…（屋外で数秒お待ちください）';
@@ -394,21 +332,14 @@
       const p = avgPosition(samples);
       const dist = haversine(p.lat, p.lng, s.lat, s.lng);
       const speedOk = (p.avgSpeed===null) ? true : (p.avgSpeed <= 2.0);
-      const accOk = p.accuracy <= 100; // 端末差のためやや緩め
+      const accOk = p.accuracy <= 100;
       const within = dist <= s.radius_m;
-
-      const msg = `
-平均位置: lat=${p.lat.toFixed(6)}, lng=${p.lng.toFixed(6)}
-推定精度≈${p.accuracy}m, 移動速度≈${p.avgSpeed? p.avgSpeed.toFixed(2):'-'}m/s
-距離=${Math.round(dist)}m / 閾値=${s.radius_m}m`;
-      logEl.textContent += '
-' + msg;
-
+      const msg = `\n平均位置: lat=${p.lat.toFixed(6)}, lng=${p.lng.toFixed(6)}\n推定精度≈${p.accuracy}m, 移動速度≈${p.avgSpeed? p.avgSpeed.toFixed(2):'-'}m/s\n距離=${Math.round(dist)}m / 閾値=${s.radius_m}m`;
+      logEl.textContent += '\n' + msg;
       if (within && speedOk && accOk) {
         setUnlockStatus('解錠済');
         appState.stamps[s.id] = { at: Date.now(), accuracy: p.accuracy };
-        saveState(appState);
-        renderSpotList();
+        saveState(appState); renderSpotList();
         $('#btn-quiz').disabled = false;
         alert('解錠しました！クイズに挑戦できます。');
       } else {
@@ -420,41 +351,7 @@
       }
     } catch (e) {
       alert('測位に失敗しました。端末の位置情報設定を確認し、屋外で再試行してください。');
-      logEl.textContent += '
-ERR: ' + e.message;
-    }
-  } = await samplePositions(3, 1500);
-      logEl.textContent = log;
-      if (!samples.length) {
-        alert('位置情報が取得できませんでした。屋外で再試行してください。');
-        return;
-      }
-      const p = avgPosition(samples);
-      const dist = haversine(p.lat, p.lng, s.lat, s.lng);
-      const speedOk = (p.avgSpeed===null) ? true : (p.avgSpeed <= 2.0);
-      const accOk = p.accuracy <= 100; // ゆるく判定（端末差吸収）
-      const within = dist <= s.radius_m;
-
-      const msg = `\n平均位置: lat=${p.lat.toFixed(6)}, lng=${p.lng.toFixed(6)}\n推定精度≈${p.accuracy}m, 移動速度≈${p.avgSpeed? p.avgSpeed.toFixed(2):'-'}m/s\n距離=${Math.round(dist)}m / 閾値=${s.radius_m}m`;
-      logEl.textContent += '\n' + msg;
-
-      if (within && speedOk && accOk) {
-        // 解錠
-        setUnlockStatus('解錠済');
-        appState.stamps[s.id] = { at: Date.now(), accuracy: p.accuracy };
-        saveState(appState);
-        renderSpotList();
-        $('#btn-quiz').disabled = false;
-        alert('解錠しました！クイズに挑戦できます。');
-      } else {
-        let reason = [];
-        if (!within) reason.push('距離が遠い');
-        if (!speedOk) reason.push('速度が速い');
-        if (!accOk) reason.push('精度が低い');
-        alert('解錠条件を満たしていません。' + (reason.length? `（${reason.join('・')}）` : ''));
-      }
-    } catch (e) {
-      alert('位置情報の許可が得られませんでした。設定をご確認ください。');
+      logEl.textContent += '\nERR: ' + e.message;
     }
   }
 
@@ -473,14 +370,53 @@ ERR: ' + e.message;
         <div class="mt-1 text-lg font-semibold">${q.q}</div>
         <div class="mt-3 grid gap-2">${q.choices.map((c,i)=>`<button data-i="${i}" class="ans px-3 py-2 rounded-lg border hover:bg-white text-left">${c}</button>`).join('')}</div>
       `;
-      const body = $('#quiz-body');
-      body.innerHTML = '';
-      body.appendChild(el);
+      const body = $('#quiz-body'); body.innerHTML = ''; body.appendChild(el);
       body.querySelectorAll('.ans').forEach(btn=>{
         btn.addEventListener('click', (ev)=>{
           const i = Number(ev.currentTarget.getAttribute('data-i'));
-          const correct = i === q.ans;
-          if (correct) score++;
-          // 解説
+          const correct = i === q.ans; if (correct) score++;
           const note = document.createElement('div');
-          note.className = 'mt-3 text-sm rounded-lg ' + (correct? 'bg
+          note.className = 'mt-3 text-sm rounded-lg ' + (correct? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800');
+          note.textContent = (correct? '正解！ ' : '不正解 ') + '— ' + q.exp;
+          body.appendChild(note);
+          const next = document.createElement('button');
+          next.className = 'mt-3 px-4 py-2 rounded-lg bg-indigo-600 text-white';
+          next.textContent = (idx<2)? '次へ' : '結果を見る';
+          next.addEventListener('click', ()=>{ if (idx<2) { idx++; renderQ(); } else { showResult(); } });
+          body.appendChild(next);
+          body.querySelectorAll('.ans').forEach(b=>b.disabled = true);
+        });
+      });
+    };
+
+    const showResult = () => {
+      const pass = score >= 2; const sName = SPOTS.find(x=>x.id===currentSpotId).name;
+      $('#quiz-body').innerHTML = `
+        <div class="text-center p-6">
+          <div class="text-2xl font-bold ${pass?'text-emerald-600':'text-rose-600'}">${pass?'合格！':'もう一歩'}</div>
+          <div class="mt-1 text-gray-700">スコア：${score} / 3</div>
+          <div class="mt-2 text-gray-600">${pass? sName+' のスタンプを獲得しました。' : 'もう一度挑戦してみよう！'}</div>
+          <div class="mt-4 flex gap-2 justify-center">
+            <button id="btn-again" class="px-4 py-2 rounded-lg border">もう一度</button>
+            <button id="btn-close" class="px-4 py-2 rounded-lg bg-gray-900 text-white">閉じる</button>
+          </div>
+        </div>`;
+      if (pass) { /* 位置解錠済なので保持 */ }
+      $('#btn-again').addEventListener('click', ()=>{ idx=0; score=0; renderQ(); });
+      $('#btn-close').addEventListener('click', ()=>{ $('#quiz-panel').classList.add('hidden'); });
+    };
+
+    renderQ();
+  }
+
+  // ====== スタンプ帳 ======
+  function renderStamps() {
+    const grid = $('#stamp-grid'); grid.innerHTML = '';
+    const keys = Object.keys(appState.stamps);
+    $('#stamp-count').textContent = keys.length;
+    $('#badge-label').textContent = keys.length>=20? 'まち案内人' : keys.length>=10? '足利博士' : keys.length>=3? 'はじめの一歩' : 'なし';
+    SPOTS.forEach(s => {
+      const got = !!appState.stamps[s.id];
+      const card = document.createElement('div');
+      card.className = 'rounded-xl border p-3 ' + (got? 'bg-emerald-50 border-emerald-200' : 'bg-white');
+      card.innerHTML = `<div class="font-medium">${s.name}</div><div class="text-xs text-gray-500">${s.themes.join('・')}</div>
