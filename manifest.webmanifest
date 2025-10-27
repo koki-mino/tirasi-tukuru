@@ -1,9 +1,0 @@
-{
-  "name": "足利まなびマップ",
-  "short_name": "まなびマップ",
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#0f766e",
-  "background_color": "#ffffff",
-  "icons": []
-}
